@@ -1,0 +1,1089 @@
+import React, { useState, useEffect, useRef } from 'react';
+
+
+// --- DEFAULT DATA ---
+const DEFAULT_LOGO = "https://placehold.co/150x150/005e2b/ffffff?text=MTsN+1+Malang";
+
+const INITIAL_QUESTIONS = [
+  // --- PILIHAN GANDA (15 Soal) ---
+  {
+    id: 1, type: 'pg',
+    text: 'Andi sedang mengunyah singkong rebus. Setelah dikunyah agak lama, singkong yang asalnya tawar perlahan terasa manis. Proses pencernaan kimiawi yang menjelaskan fenomena ini melibatkan...',
+    options: ['Enzim pepsin memecah protein menjadi pepton di lambung', 'Enzim ptialin mengubah amilum menjadi maltosa di rongga mulut', 'Enzim lipase menguraikan lemak menjadi asam lemak di usus', 'Asam klorida membunuh bakteri pada singkong di lambung'],
+    answer: 'Enzim ptialin mengubah amilum menjadi maltosa di rongga mulut'
+  },
+  {
+    id: 2, type: 'pg',
+    text: 'Budi memiliki kebiasaan menunda jam makan siang dan sering mengonsumsi kopi pekat perut kosong. Akhir-akhir ini ia sering merasakan perih dan kembung di bagian ulu hati. Berdasarkan analisis fisiologis, hal ini disebabkan oleh...',
+    options: ['Produksi HCl lambung yang berlebihan mengiritasi dinding mukosa', 'Gerak peristaltik usus besar yang terlalu cepat', 'Pankreas gagal memproduksi insulin akibat kafein', 'Bakteri Escherichia coli berkembang biak pesat di lambung'],
+    answer: 'Produksi HCl lambung yang berlebihan mengiritasi dinding mukosa'
+  },
+  {
+    id: 3, type: 'pg',
+    text: 'Seorang pasien balita didiagnosis mengalami gangguan penyerapan nutrisi parah meski asupan makanannya bergizi tinggi. Dokter mencurigai adanya kerusakan struktural pada dinding organ pencernaannya. Organ dan bagian yang paling mungkin mengalami kerusakan adalah...',
+    options: ['Lambung pada bagian kelenjar getah bening', 'Usus besar pada bagian rektum', 'Usus halus pada bagian vili (jonjot usus)', 'Pankreas pada saluran pengeluaran enzim'],
+    answer: 'Usus halus pada bagian vili (jonjot usus)'
+  },
+  {
+    id: 4, type: 'pg',
+    text: 'Siti mengalami dehidrasi setelah beberapa hari menderita diare parah. Analisis medis menunjukkan ada infeksi yang menyebabkan sisa makanan melaju terlalu cepat. Proses utama yang terganggu akibat kondisi ini adalah...',
+    options: ['Penyerapan sari-sari makanan di usus kosong', 'Penyerapan air dan pembusukan sisa makanan di usus besar', 'Pencernaan lemak oleh cairan empedu di usus dua belas jari', 'Pemecahan karbohidrat kompleks di mulut'],
+    answer: 'Penyerapan air dan pembusukan sisa makanan di usus besar'
+  },
+  {
+    id: 5, type: 'pg',
+    text: 'Pak Anton disarankan dokter untuk sangat mengurangi konsumsi makanan berlemak tinggi seperti gorengan setelah menjalani operasi pengangkatan kantung empedu. Alasan logis dari anjuran medis ini adalah...',
+    options: ['Tanpa empedu, lambung tidak bisa memproduksi asam untuk mencerna lemak', 'Tubuh tidak memiliki enzim protease untuk memecah protein dari minyak', 'Pencernaan mekanik di usus besar menjadi terhenti total', 'Tidak ada cairan yang mengemulsikan lemak sehingga sulit dicerna enzim lipase'],
+    answer: 'Tidak ada cairan yang mengemulsikan lemak sehingga sulit dicerna enzim lipase'
+  },
+  {
+    id: 6, type: 'pg',
+    text: 'Dalam tes darah rutin, kakek Reyhan ditemukan memiliki kadar gula darah puasa yang sangat tinggi (hiperglikemia). Sistem organ pencernaan yang kinerjanya menurun sehingga memicu kondisi ini adalah...',
+    options: ['Hati dalam memproduksi cairan empedu', 'Pankreas dalam memproduksi hormon insulin', 'Usus halus dalam menyerap glukosa', 'Lambung dalam menghancurkan karbohidrat'],
+    answer: 'Pankreas dalam memproduksi hormon insulin'
+  },
+  {
+    id: 7, type: 'pg',
+    text: 'Sering mengonsumsi makanan cepat saji tanpa sayuran memicu feses menjadi keras dan sulit dikeluarkan. Secara fisiologis, peran sayuran berserat tinggi dalam mencegah hal tersebut adalah...',
+    options: ['Membunuh bakteri patogen di usus besar', 'Mempercepat produksi asam lambung untuk melunakkan makanan', 'Menahan air di usus besar sehingga feses tetap lunak dan merangsang peristaltik', 'Diubah menjadi energi cadangan di dalam hati'],
+    answer: 'Menahan air di usus besar sehingga feses tetap lunak dan merangsang peristaltik'
+  },
+  {
+    id: 8, type: 'pg',
+    text: 'Seorang atlet mengeluh sering merasa cepat lelah, pucat, dan napasnya tersengal-sengal saat latihan ringan. Hasil lab menunjukkan kadar hemoglobinnya sangat rendah. Dampak langsung dari kondisi ini terhadap fungsi sel tubuh adalah...',
+    options: ['Sel tubuh tidak mendapatkan cukup oksigen untuk respirasi seluler penghasil energi', 'Sel tubuh kehilangan kemampuan melawan infeksi virus', 'Darah kehilangan kemampuan untuk membeku saat terjadi luka', 'Zat sisa metabolisme menumpuk dan meracuni sel-sel otot'],
+    answer: 'Sel tubuh tidak mendapatkan cukup oksigen untuk respirasi seluler penghasil energi'
+  },
+  {
+    id: 9, type: 'pg',
+    text: 'Luka sayatan di jari Rio akibat pisau dapur terlihat membengkak dan mengeluarkan nanah beberapa hari kemudian. Nanah tersebut sebenarnya merupakan indikator bahwa sistem peredaran darah sedang bekerja, yaitu berupa...',
+    options: ['Trombosit yang gagal menutup luka sayatan', 'Eritrosit yang rusak dan membusuk akibat paparan udara luar', 'Akumulasi leukosit yang mati setelah bertempur melawan bakteri patogen', 'Plasma darah yang mengering karena suhu tubuh meningkat'],
+    answer: 'Akumulasi leukosit yang mati setelah bertempur melawan bakteri patogen'
+  },
+  {
+    id: 10, type: 'pg',
+    text: 'Wabah Demam Berdarah Dengue (DBD) berbahaya karena virus merusak suatu komponen darah. Pasien DBD dalam fase kritis sangat rentan mengalami pendarahan internal (seperti mimisan parah). Komponen darah yang menurun drastis adalah...',
+    options: ['Eritrosit', 'Leukosit', 'Trombosit', 'Plasma Darah'],
+    answer: 'Trombosit'
+  },
+  {
+    id: 11, type: 'pg',
+    text: 'Korban kecelakaan yang kehilangan banyak darah harus segera mendapat transfusi. Jika pasien memiliki golongan darah AB, namun di PMI hanya tersedia darah A, B, dan O, tindakan yang tepat berdasarkan konsep aglutinasi adalah...',
+    options: ['Hanya bisa diberi darah O karena O adalah donor universal tanpa aglutinogen', 'Hanya bisa diberi darah A dan B untuk menyeimbangkan antibodi pasien', 'Tidak bisa diberi ketiganya, harus mencari donor bergolongan AB murni', 'Bisa menerima darah A, B, maupun O karena AB adalah resipien universal'],
+    answer: 'Bisa menerima darah A, B, maupun O karena AB adalah resipien universal'
+  },
+  {
+    id: 12, type: 'pg',
+    text: 'Saat melakukan pertolongan pertama, tenaga medis memeriksa denyut nadi korban di bagian leher atau pergelangan tangan. Denyut ini hanya terasa pada pembuluh darah tertentu karena...',
+    options: ['Pembuluh vena (balik) memiliki aliran darah yang deras menuju jantung', 'Pembuluh kapiler memiliki dinding yang tipis dan langsung berbatasan dengan sel', 'Pembuluh arteri (nadi) menerima tekanan langsung dari pompaan jantung', 'Semua jenis pembuluh darah akan berdenyut jika ditekan dari luar kulit'],
+    answer: 'Pembuluh arteri (nadi) menerima tekanan langsung dari pompaan jantung'
+  },
+  {
+    id: 13, type: 'pg',
+    text: 'Secara anatomi, otot pada dinding jantung bagian ventrikel (bilik) kiri jauh lebih tebal dibandingkan bagian lainnya. Adaptasi struktur ini sangat krusial karena bilik kiri harus...',
+    options: ['Menampung darah kotor yang mengalir deras dari seluruh tubuh', 'Memompa darah kaya karbon dioksida menuju paru-paru untuk dibersihkan', 'Memompa darah kaya oksigen dengan tekanan tinggi ke seluruh tubuh', 'Mencegah darah yang sudah keluar jantung kembali lagi ke dalam serambi'],
+    answer: 'Memompa darah kaya oksigen dengan tekanan tinggi ke seluruh tubuh'
+  },
+  {
+    id: 14, type: 'pg',
+    text: 'Pada penderita asma akut, jalur peredaran darah kecil (pulmonalis) memegang peran kritis dalam menyelematkan nyawa pasien saat serangan terjadi. Proses penting yang terjadi pada jalur ini adalah...',
+    options: ['Pelepasan oksigen dari hemoglobin ke seluruh sel-sel jaringan tubuh', 'Penyaringan racun dari darah oleh jaringan hati', 'Pengikatan oksigen yang masuk melalui alveolus paru-paru ke dalam aliran darah', 'Pengangkutan sari-sari makanan menuju serambi kanan jantung'],
+    answer: 'Pengikatan oksigen yang masuk melalui alveolus paru-paru ke dalam aliran darah'
+  },
+  {
+    id: 15, type: 'pg',
+    text: 'Gaya hidup sedenter (jarang bergerak) dan konsumsi makanan tinggi kolesterol dalam jangka panjang dapat memicu aterosklerosis. Dampak fatal dari kondisi ini terhadap sistem sirkulasi adalah...',
+    options: ['Penyempitan dan pengerasan pembuluh nadi akibat plak, memicu serangan jantung', 'Pecahnya pembuluh kapiler di bawah kulit secara spontan', 'Berkurangnya jumlah sel darah merah yang diproduksi sumsum tulang', 'Jantung tidak lagi memproduksi hormon pemicu denyut'],
+    answer: 'Penyempitan dan pengerasan pembuluh nadi akibat plak, memicu serangan jantung'
+  },
+
+  // --- PILIHAN GANDA KOMPLEKS (2 Soal) ---
+  {
+    id: 16, type: 'pg_kompleks',
+    text: 'Berdasarkan pemahamanmu tentang keterkaitan sistem pencernaan, pilihlah DUA kebiasaan sehari-hari di bawah ini yang secara langsung dapat mencegah timbulnya gangguan tukak lambung (maag) dan konstipasi (sembelit)!',
+    options: [
+      'Makan tepat waktu secara teratur agar asam lambung tidak mengiritasi dinding lambung kosong',
+      'Mengunyah makanan secara cepat agar segera diproses oleh usus halus',
+      'Mengonsumsi pepaya dan sayuran hijau untuk menambah volume feses dan menahan air',
+      'Minum teh pekat setelah makan daging untuk menetralisir lemak'
+    ],
+    answer: [
+      'Makan tepat waktu secara teratur agar asam lambung tidak mengiritasi dinding lambung kosong',
+      'Mengonsumsi pepaya dan sayuran hijau untuk menambah volume feses dan menahan air'
+    ]
+  },
+  {
+    id: 17, type: 'pg_kompleks',
+    text: 'Hipertensi (tekanan darah tinggi) dikenal sebagai "silent killer". Dari gejala klinis dan pemicu di bawah ini, manakah DUA pernyataan yang secara ilmiah BENAR terkait hipertensi?',
+    options: [
+      'Hipertensi terjadi saat tekanan sistolik lebih dari 140 mmHg karena pembuluh darah menyempit atau kaku',
+      'Kondisi ini selalu ditandai dengan munculnya ruam merah di permukaan kulit seluruh tubuh',
+      'Asupan garam (natrium) berlebih memaksa tubuh menahan air, sehingga meningkatkan volume darah dan tekanan pembuluh',
+      'Cara mengatasinya adalah dengan transfusi plasma darah agar darah lebih encer'
+    ],
+    answer: [
+      'Hipertensi terjadi saat tekanan sistolik lebih dari 140 mmHg karena pembuluh darah menyempit atau kaku',
+      'Asupan garam (natrium) berlebih memaksa tubuh menahan air, sehingga meningkatkan volume darah dan tekanan pembuluh'
+    ]
+  },
+
+  // --- MENJODOHKAN (2 Soal) ---
+  {
+    id: 18, type: 'matching',
+    text: 'Pasangkanlah organ sistem pencernaan berikut dengan enzim utama yang dihasilkannya, agar proses hidrolisis makromolekul berhasil!',
+    pairs: [
+      { left: 'Kelenjar Saliva (Mulut)' },
+      { left: 'Dinding Lambung' },
+      { left: 'Pankreas' },
+      { left: 'Usus Halus' }
+    ],
+    optionsRight: ['Enzim Ptialin', 'Enzim Pepsin', 'Enzim Lipase', 'Enzim Laktase', 'Cairan Empedu'],
+    answers: {
+      'Kelenjar Saliva (Mulut)': 'Enzim Ptialin',
+      'Dinding Lambung': 'Enzim Pepsin',
+      'Pankreas': 'Enzim Lipase',
+      'Usus Halus': 'Enzim Laktase'
+    }
+  },
+  {
+    id: 19, type: 'matching',
+    text: 'Pasangkanlah komponen penyusun darah manusia berikut dengan fungsi spesifiknya dalam menjaga keberlangsungan hidup!',
+    pairs: [
+      { left: 'Eritrosit' },
+      { left: 'Leukosit' },
+      { left: 'Trombosit' },
+      { left: 'Plasma Darah' }
+    ],
+    optionsRight: ['Mengangkut gas pernapasan (Oksigen & CO2)', 'Melakukan fagositosis agen infeksi', 'Memicu jaring fibrin untuk penutupan luka', 'Mendistribusikan zat makanan dan hormon', 'Memompa darah ke paru-paru'],
+    answers: {
+      'Eritrosit': 'Mengangkut gas pernapasan (Oksigen & CO2)',
+      'Leukosit': 'Melakukan fagositosis agen infeksi',
+      'Trombosit': 'Memicu jaring fibrin untuk penutupan luka',
+      'Plasma Darah': 'Mendistribusikan zat makanan dan hormon'
+    }
+  },
+
+  // --- ISIAN SINGKAT (1 Soal) ---
+  {
+    id: 20, type: 'isian',
+    text: 'Darah yang kaya akan oksigen (O2) dari paru-paru akan kembali ke jantung masuk melalui serambi kiri. Setelah itu, darah akan diturunkan ke suatu ruangan khusus di jantung. Ruangan jantung yang bertugas memompa darah kaya oksigen ini keluar menuju pembuluh aorta untuk diedarkan ke seluruh tubuh adalah...',
+    answer: ['bilik kiri', 'ventrikel kiri', 'bilik kiri jantung', 'ventrikel kiri jantung'] // Acceptable answers
+  }
+];
+
+const KELAS_OPTIONS = ['VIII A', 'VIII B', 'VIII C', 'VIII D', 'VIII E', 'VIII F', 'VIII G', 'VIII H', 'VIII I'];
+
+
+// Simple SVG Icons
+const IconCheck = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>;
+const IconX = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>;
+const IconSettings = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>;
+const IconPlay = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>;
+const IconLogOut = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>;
+
+const Modal = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+        <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+          <h3 className="font-bold text-gray-800">{title}</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-red-500"><IconX /></button>
+        </div>
+        <div className="p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+export default function App() {
+  const [currentUser, setCurrentUser] = useState(null); // {role, name, class, presensi}
+  const [adminPassword, setAdminPassword] = useState('admin123');
+  const [questions, setQuestions] = useState(INITIAL_QUESTIONS);
+  const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO);
+  
+  // Track students who have taken the quiz (Name_Class combination as key)
+  const [completedStudents, setCompletedStudents] = useState({}); 
+
+  // Quiz State
+  const [quizState, setQuizState] = useState('idle'); // idle, intro, in_progress, finished
+  const [userAnswers, setUserAnswers] = useState({});
+  const [score, setScore] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(1800); // 30 minutes
+  
+  // UI State
+  const [toastMessage, setToastMessage] = useState('');
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setQuizState('idle');
+    setUserAnswers({});
+  };
+
+
+  const startQuiz = () => {
+    setTimeRemaining(1800);
+    setUserAnswers({});
+    setQuizState('in_progress');
+  };
+
+  const submitQuiz = () => {
+    let calculatedScore = 0;
+
+    questions.forEach(q => {
+      const uAns = userAnswers[q.id];
+      if (!uAns) return;
+
+      if (q.type === 'pg') {
+        if (uAns === q.answer) calculatedScore += 4;
+      } 
+      else if (q.type === 'pg_kompleks') {
+        if (Array.isArray(uAns)) {
+          uAns.forEach(ans => {
+            if (q.answer.includes(ans)) calculatedScore += 4; // 2 correct answers = max 8 pts
+          });
+          // Penalize for wrong extra choices? For simplicity, we just check matches.
+          // Better logic: if they pick exactly the right ones.
+          const isExactMatch = uAns.length === q.answer.length && uAns.every(v => q.answer.includes(v));
+          // We'll stick to 4 points per correct choice selected.
+        }
+      }
+      else if (q.type === 'matching') {
+        if (typeof uAns === 'object') {
+          Object.keys(uAns).forEach(leftItem => {
+            if (q.answers[leftItem] === uAns[leftItem]) {
+              calculatedScore += 2; // 4 pairs * 2 = 8 pts
+            }
+          });
+        }
+      }
+      else if (q.type === 'isian') {
+        const cleanedAns = String(uAns).trim().toLowerCase();
+        if (q.answer.includes(cleanedAns)) {
+          calculatedScore += 8;
+        }
+      }
+    });
+
+    setScore(calculatedScore);
+    setQuizState('finished');
+
+    // Save completion record if it's a real student
+    if (currentUser.role === 'student') {
+      const studentKey = `${currentUser.name}_${currentUser.class}`;
+      setCompletedStudents(prev => ({
+        ...prev,
+        [studentKey]: {
+          score: calculatedScore,
+          date: new Date().toISOString()
+        }
+      }));
+    }
+  };
+
+  // Timer Effect
+  useEffect(() => {
+    let timer;
+    if (quizState === 'in_progress' && timeRemaining > 0) {
+      timer = setInterval(() => {
+        setTimeRemaining(prev => prev - 1);
+      }, 1000);
+    } else if (quizState === 'in_progress' && timeRemaining <= 0) {
+      submitQuiz(); // Auto submit
+    }
+    return () => clearInterval(timer);
+  }, [quizState, timeRemaining]);
+
+
+
+  if (!currentUser) {
+    return (
+      <LoginScreen 
+        onLogin={(user) => setCurrentUser(user)} 
+        adminPassword={adminPassword}
+        completedStudents={completedStudents}
+        logoUrl={logoUrl}
+        showToast={showToast}
+      />
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+      {/* Global Toast */}
+      {toastMessage && (
+        <div className="fixed top-4 right-4 bg-emerald-600 text-white px-6 py-3 rounded-lg shadow-xl z-50 animate-bounce">
+          {toastMessage}
+        </div>
+      )}
+
+      {/* Main Routing via State */}
+      {currentUser.role === 'admin' ? (
+        <AdminDashboard 
+          questions={questions} setQuestions={setQuestions}
+          logoUrl={logoUrl} setLogoUrl={setLogoUrl}
+          adminPassword={adminPassword} setAdminPassword={setAdminPassword}
+          onLogout={handleLogout}
+          showToast={showToast}
+          onTestRun={() => {
+            setCurrentUser({ role: 'admin_preview', name: 'Admin (Uji Coba)', class: 'Admin' });
+            setQuizState('intro');
+          }}
+        />
+      ) : (
+        <StudentView 
+          currentUser={currentUser}
+          quizState={quizState} setQuizState={setQuizState}
+          questions={questions}
+          userAnswers={userAnswers} setUserAnswers={setUserAnswers}
+          timeRemaining={timeRemaining}
+          startQuiz={startQuiz}
+          submitQuiz={submitQuiz}
+          score={score}
+          logoUrl={logoUrl}
+          onLogout={handleLogout}
+        />
+      )}
+    </div>
+  );
+}
+
+
+function LoginScreen({ onLogin, adminPassword, completedStudents, logoUrl, showToast }) {
+  const [tab, setTab] = useState('student');
+  
+  // Student Form
+  const [name, setName] = useState('');
+  const [kelas, setKelas] = useState('');
+  const [presensi, setPresensi] = useState('');
+
+  // Admin Form
+  const [adminUser, setAdminUser] = useState('');
+  const [adminPass, setAdminPass] = useState('');
+
+  const handleStudentLogin = (e) => {
+    e.preventDefault();
+    if (!name.trim() || !kelas || !presensi) {
+      showToast('Harap lengkapi semua data!');
+      return;
+    }
+    
+    const studentKey = `${name.trim()}_${kelas}`;
+    if (completedStudents[studentKey]) {
+      showToast('Siswa ini sudah mengerjakan asesmen (hanya boleh 1 kali).');
+      return;
+    }
+
+    onLogin({
+      role: 'student',
+      name: name.trim(),
+      class: kelas,
+      presensi: presensi
+    });
+  };
+
+  const handleAdminLogin = (e) => {
+    e.preventDefault();
+    if (adminUser === 'admin' && adminPass === adminPassword) {
+      onLogin({ role: 'admin' });
+    } else {
+      showToast('Username atau password admin salah!');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-emerald-700 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Decorative Background */}
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-yellow-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md z-10 overflow-hidden">
+        <div className="p-8 text-center bg-emerald-50 border-b border-emerald-100">
+          <img src={logoUrl} alt="Logo" className="w-20 h-20 mx-auto rounded-full object-cover border-4 border-white shadow-md mb-4" />
+          <h1 className="text-xl font-bold text-emerald-900">Remedial Asesmen Sumatif IPA</h1>
+          <p className="text-sm text-emerald-700 font-medium">Kelas VIII - MTsN 1 Kota Malang</p>
+          <p className="text-xs text-emerald-600 mt-1 italic">Disusun oleh MGMP IPA MTs Kota Malang</p>
+        </div>
+
+        <div className="flex border-b">
+          <button 
+            className={`flex-1 py-3 text-sm font-semibold transition-colors ${tab === 'student' ? 'bg-white text-emerald-700 border-b-2 border-emerald-600' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
+            onClick={() => setTab('student')}
+          >
+            Masuk Siswa
+          </button>
+          <button 
+            className={`flex-1 py-3 text-sm font-semibold transition-colors ${tab === 'admin' ? 'bg-white text-emerald-700 border-b-2 border-emerald-600' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
+            onClick={() => setTab('admin')}
+          >
+            Masuk Admin
+          </button>
+        </div>
+
+        <div className="p-8">
+          {tab === 'student' ? (
+            <form onSubmit={handleStudentLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                <input type="text" required value={name} onChange={e => setName(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" 
+                  placeholder="Masukkan nama lengkap" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+                <select required value={kelas} onChange={e => setKelas(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition bg-white">
+                  <option value="" disabled>Pilih Kelas</option>
+                  {KELAS_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Presensi (Password)</label>
+                <input type="number" required value={presensi} onChange={e => setPresensi(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" 
+                  placeholder="Contoh: 15" />
+              </div>
+              <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors mt-4">
+                Mulai Kerjakan
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Username Admin</label>
+                <input type="text" required value={adminUser} onChange={e => setAdminUser(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:emerald-500 focus:border-emerald-500 outline-none transition" 
+                  placeholder="admin" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" required value={adminPass} onChange={e => setAdminPass(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:emerald-500 focus:border-emerald-500 outline-none transition" 
+                  placeholder="••••••••" />
+              </div>
+              <button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded-lg transition-colors mt-4">
+                Masuk Dashboard Admin
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+function AdminDashboard({ questions, setQuestions, logoUrl, setLogoUrl, adminPassword, setAdminPassword, onLogout, showToast, onTestRun }) {
+  const [activeTab, setActiveTab] = useState('questions');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  // Settings Form
+  const [newLogo, setNewLogo] = useState(logoUrl);
+  const [newPass, setNewPass] = useState('');
+
+  const saveSettings = () => {
+    if (newLogo) setLogoUrl(newLogo);
+    if (newPass) setAdminPassword(newPass);
+    setIsSettingsOpen(false);
+    showToast('Pengaturan berhasil disimpan');
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-slate-100">
+      {/* Header */}
+      <header className="bg-slate-900 text-white p-4 flex justify-between items-center shadow-md z-10">
+        <div className="flex items-center gap-3">
+          <div className="bg-white p-1 rounded-md"><IconSettings className="text-slate-900"/></div>
+          <h1 className="font-bold text-lg">Admin Dashboard</h1>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={onTestRun} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg text-sm font-medium transition">
+            <IconPlay /> Uji Coba Soal
+          </button>
+          <button onClick={() => setIsSettingsOpen(true)} className="bg-slate-700 hover:bg-slate-600 p-2 rounded-lg transition">
+            <IconSettings />
+          </button>
+          <button onClick={onLogout} className="bg-red-600 hover:bg-red-500 p-2 rounded-lg transition" title="Keluar">
+            <IconLogOut />
+          </button>
+        </div>
+      </header>
+
+      {/* Content */}
+      <main className="flex-1 overflow-auto p-6">
+        <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-sm border p-6">
+          <div className="flex justify-between items-end mb-6 border-b pb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-800">Manajemen Soal</h2>
+              <p className="text-slate-500 text-sm mt-1">Total: {questions.length} Soal (15 PG, 2 PGK, 2 Menjodohkan, 1 Isian)</p>
+            </div>
+            <div className="text-sm bg-amber-100 text-amber-800 px-3 py-1 rounded border border-amber-200">
+              Perubahan tersimpan sementara di sesi ini
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {questions.map((q, idx) => (
+              <AdminQuestionEditor key={q.id} q={q} idx={idx} updateQuestion={(updated) => {
+                const newQs = [...questions];
+                newQs[idx] = updated;
+                setQuestions(newQs);
+              }} />
+            ))}
+          </div>
+        </div>
+      </main>
+
+      {/* Settings Modal */}
+      <Modal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} title="Pengaturan Admin">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">URL Logo Aplikasi</label>
+            <input type="text" value={newLogo} onChange={e => setNewLogo(e.target.value)} className="w-full px-3 py-2 border rounded-md" />
+            <div className="mt-2">Preview: <img src={newLogo} alt="Preview" className="h-10 mt-1 rounded border" onError={(e)=>{e.target.src="https://placehold.co/100x100?text=Error"}}/></div>
+          </div>
+          <hr />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ganti Password Admin</label>
+            <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} className="w-full px-3 py-2 border rounded-md" placeholder="Kosongkan jika tidak ingin ganti" />
+          </div>
+          <button onClick={saveSettings} className="w-full bg-slate-900 text-white font-bold py-2 rounded-md hover:bg-slate-800">Simpan Pengaturan</button>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+
+function AdminQuestionEditor({ q, idx, updateQuestion }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [localQ, setLocalQ] = useState(q);
+
+  const handleSave = () => {
+    updateQuestion(localQ);
+    setIsExpanded(false);
+  };
+
+  const typeLabels = {
+    'pg': 'Pilihan Ganda',
+    'pg_kompleks': 'Pilihan Ganda Kompleks',
+    'matching': 'Menjodohkan',
+    'isian': 'Isian Singkat'
+  };
+
+  return (
+    <div className="border rounded-lg overflow-hidden bg-slate-50">
+      <div 
+        className="flex justify-between items-center p-4 bg-white cursor-pointer hover:bg-slate-50"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center gap-4">
+          <span className="bg-slate-800 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm">{idx + 1}</span>
+          <div>
+            <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-1">{typeLabels[localQ.type]}</div>
+            <div className="font-medium text-slate-800 line-clamp-1">{localQ.text}</div>
+          </div>
+        </div>
+        <button className="text-slate-400 hover:text-slate-700">
+          {isExpanded ? 'Tutup' : 'Edit'}
+        </button>
+      </div>
+
+      {isExpanded && (
+        <div className="p-4 border-t border-slate-200 space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Teks Soal</label>
+            <textarea 
+              value={localQ.text} 
+              onChange={e => setLocalQ({...localQ, text: e.target.value})}
+              className="w-full p-2 border rounded-md" rows="3"
+            />
+          </div>
+
+          {/* Editor based on Type */}
+          {localQ.type === 'pg' && (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">Pilihan Jawaban</label>
+              {localQ.options.map((opt, oIdx) => (
+                <div key={oIdx} className="flex gap-2 mb-2 items-center">
+                  <input 
+                    type="radio" 
+                    checked={localQ.answer === opt}
+                    onChange={() => setLocalQ({...localQ, answer: opt})}
+                    className="w-4 h-4"
+                  />
+                  <input 
+                    type="text" 
+                    value={opt}
+                    onChange={e => {
+                      const newOpts = [...localQ.options];
+                      newOpts[oIdx] = e.target.value;
+                      // Update answer if the modified option was the correct one
+                      const newAnswer = (localQ.answer === opt) ? e.target.value : localQ.answer;
+                      setLocalQ({...localQ, options: newOpts, answer: newAnswer});
+                    }}
+                    className="flex-1 p-2 border rounded-md text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {localQ.type === 'pg_kompleks' && (
+            <div>
+               <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">Pilihan Jawaban (Centang yang benar)</label>
+               {localQ.options.map((opt, oIdx) => (
+                <div key={oIdx} className="flex gap-2 mb-2 items-center">
+                  <input 
+                    type="checkbox" 
+                    checked={localQ.answer.includes(opt)}
+                    onChange={(e) => {
+                      let newAns = [...localQ.answer];
+                      if(e.target.checked) newAns.push(opt);
+                      else newAns = newAns.filter(a => a !== opt);
+                      setLocalQ({...localQ, answer: newAns});
+                    }}
+                    className="w-4 h-4 rounded"
+                  />
+                  <input 
+                    type="text" 
+                    value={opt}
+                    onChange={e => {
+                      const newOpts = [...localQ.options];
+                      newOpts[oIdx] = e.target.value;
+                      
+                      let newAns = [...localQ.answer];
+                      const ansIdx = newAns.indexOf(opt);
+                      if (ansIdx > -1) newAns[ansIdx] = e.target.value;
+
+                      setLocalQ({...localQ, options: newOpts, answer: newAns});
+                    }}
+                    className="flex-1 p-2 border rounded-md text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {localQ.type === 'matching' && (
+            <div>
+               <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">Pasangan (Kiri - Kanan)</label>
+               {localQ.pairs.map((pair, pIdx) => (
+                 <div key={pIdx} className="flex gap-4 mb-2">
+                    <input 
+                      type="text" 
+                      value={pair.left}
+                      onChange={e => {
+                        const newPairs = [...localQ.pairs];
+                        const oldLeft = newPairs[pIdx].left;
+                        newPairs[pIdx].left = e.target.value;
+                        
+                        const newAnswers = {...localQ.answers};
+                        newAnswers[e.target.value] = newAnswers[oldLeft];
+                        delete newAnswers[oldLeft];
+
+                        setLocalQ({...localQ, pairs: newPairs, answers: newAnswers});
+                      }}
+                      className="flex-1 p-2 border rounded-md text-sm bg-slate-100" placeholder="Kiri"
+                    />
+                    <select 
+                      value={localQ.answers[pair.left] || ''}
+                      onChange={e => {
+                        const newAnswers = {...localQ.answers};
+                        newAnswers[pair.left] = e.target.value;
+                        setLocalQ({...localQ, answers: newAnswers});
+                      }}
+                      className="flex-1 p-2 border rounded-md text-sm"
+                    >
+                      <option value="" disabled>Pilih Pasangan...</option>
+                      {localQ.optionsRight.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                 </div>
+               ))}
+               <div className="mt-4">
+                 <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">Daftar Pilihan Kanan (Pisahkan dengan koma)</label>
+                 <textarea 
+                    value={localQ.optionsRight.join(', ')}
+                    onChange={e => {
+                      const opts = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                      setLocalQ({...localQ, optionsRight: opts});
+                    }}
+                    className="w-full p-2 border rounded-md text-sm" rows="2"
+                 />
+               </div>
+            </div>
+          )}
+
+          {localQ.type === 'isian' && (
+            <div>
+               <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">Kunci Jawaban (Pisahkan dengan koma untuk variasi)</label>
+               <textarea 
+                  value={localQ.answer.join(', ')}
+                  onChange={e => {
+                    const ans = e.target.value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+                    setLocalQ({...localQ, answer: ans});
+                  }}
+                  className="w-full p-2 border rounded-md text-sm" rows="2"
+                  placeholder="Misal: bilik kiri, ventrikel kiri"
+               />
+               <p className="text-xs text-slate-400 mt-1">Jawaban siswa akan diubah huruf kecil semua (lowercase) sebelum dicocokkan.</p>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2">
+            <button onClick={handleSave} className="bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-emerald-700">Simpan Perubahan Soal Ini</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function StudentView({ currentUser, quizState, setQuizState, questions, userAnswers, setUserAnswers, timeRemaining, startQuiz, submitQuiz, score, logoUrl, onLogout }) {
+  
+  if (quizState === 'intro') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white max-w-2xl w-full rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-emerald-700 p-6 text-white flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold">Halo, {currentUser.name}!</h1>
+              <p className="opacity-80">Kelas: {currentUser.class}</p>
+            </div>
+            <img src={logoUrl} alt="Logo" className="h-16 w-16 bg-white rounded-full p-1" />
+          </div>
+          <div className="p-8 space-y-6">
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-5">
+              <h2 className="font-bold text-emerald-800 text-lg mb-3">Tata Tertib & Informasi Asesmen</h2>
+              <ul className="list-disc list-inside space-y-2 text-slate-700 text-sm">
+                <li>Mata Pelajaran: <strong>Ilmu Pengetahuan Alam (IPA)</strong></li>
+                <li>Materi: <strong>Sistem Pencernaan & Peredaran Darah</strong></li>
+                <li>Jumlah Soal: <strong>20 Soal</strong> (PG, PG Kompleks, Menjodohkan, Isian)</li>
+                <li>Waktu Pengerjaan: <strong>30 Menit</strong></li>
+                <li>Kriteria Ketuntasan Minimal (KKM): <strong>80</strong></li>
+                <li className="text-red-600 font-medium">Asesmen hanya dapat dikerjakan 1 kali. Pastikan koneksi internet stabil.</li>
+              </ul>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={startQuiz} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl text-lg transition-transform hover:scale-[1.02] shadow-lg">
+                Mulai Mengerjakan
+              </button>
+              <button onClick={onLogout} className="px-6 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-colors">
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (quizState === 'in_progress') {
+    return (
+      <ActiveQuiz 
+        questions={questions}
+        userAnswers={userAnswers} setUserAnswers={setUserAnswers}
+        timeRemaining={timeRemaining}
+        submitQuiz={submitQuiz}
+        currentUser={currentUser}
+      />
+    );
+  }
+
+  if (quizState === 'finished') {
+    return (
+      <ResultScreen 
+        score={score} 
+        currentUser={currentUser} 
+        onLogout={onLogout}
+      />
+    );
+  }
+
+  return null;
+}
+
+
+function ActiveQuiz({ questions, userAnswers, setUserAnswers, timeRemaining, submitQuiz, currentUser }) {
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const q = questions[currentIdx];
+
+  const formatTime = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const handleAnswerChange = (val) => {
+    setUserAnswers(prev => ({ ...prev, [q.id]: val }));
+  };
+
+  // Prevent accidental refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-slate-100 flex flex-col">
+      {/* Header */}
+      <header className="bg-white border-b sticky top-0 z-20 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="font-bold text-slate-800 hidden sm:block">{currentUser.name} <span className="text-slate-400 font-normal">| {currentUser.class}</span></div>
+          </div>
+          <div className="flex items-center gap-4">
+             <div className={`font-mono text-xl font-bold px-4 py-1 rounded-full ${timeRemaining < 300 ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-100 text-slate-700'}`}>
+               {formatTime(timeRemaining)}
+             </div>
+             <button onClick={() => {
+                if (window.confirm('Yakin ingin menyelesaikan ujian sekarang? Jawaban tidak dapat diubah lagi.')) {
+                  submitQuiz();
+                }
+             }} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+               Selesai
+             </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 max-w-6xl mx-auto w-full flex flex-col md:flex-row gap-6 p-4">
+        
+        {/* Navigation Grid (Sidebar) */}
+        <div className="w-full md:w-64 shrink-0 bg-white rounded-xl shadow-sm border p-4 h-fit sticky top-24">
+          <h3 className="font-semibold text-slate-700 mb-3 text-sm uppercase tracking-wide">Navigasi Soal</h3>
+          <div className="grid grid-cols-5 gap-2">
+            {questions.map((qst, i) => {
+              const isAnswered = userAnswers[qst.id] !== undefined && userAnswers[qst.id] !== '' && 
+                                (Array.isArray(userAnswers[qst.id]) ? userAnswers[qst.id].length > 0 : 
+                                (typeof userAnswers[qst.id] === 'object' ? Object.keys(userAnswers[qst.id]).length > 0 : true));
+              return (
+                <button 
+                  key={qst.id}
+                  onClick={() => setCurrentIdx(i)}
+                  className={`
+                    w-full aspect-square flex items-center justify-center rounded text-sm font-bold transition
+                    ${currentIdx === i ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}
+                    ${isAnswered ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}
+                  `}
+                >
+                  {i + 1}
+                </button>
+              )
+            })}
+          </div>
+          <div className="mt-4 flex flex-col gap-2 text-xs text-slate-500">
+             <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-sm"></div> Sudah Dijawab</div>
+             <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-100 border rounded-sm"></div> Belum Dijawab</div>
+          </div>
+        </div>
+
+        {/* Question Area */}
+        <div className="flex-1 bg-white rounded-xl shadow-sm border flex flex-col overflow-hidden relative">
+          {/* Progress bar */}
+          <div className="h-1 bg-slate-100 w-full absolute top-0"><div className="h-full bg-emerald-500 transition-all duration-300" style={{width: `${((currentIdx + 1)/questions.length)*100}%`}}></div></div>
+          
+          <div className="p-6 md:p-10 flex-1">
+            <div className="flex gap-4 mb-6">
+              <span className="shrink-0 bg-slate-800 text-white w-10 h-10 flex items-center justify-center rounded-lg font-bold text-lg">
+                {currentIdx + 1}
+              </span>
+              <div>
+                <p className="text-lg text-slate-800 leading-relaxed font-medium">{q.text}</p>
+                {q.type === 'pg_kompleks' && <p className="text-sm text-amber-600 font-semibold mt-2">*Pilih semua jawaban yang benar</p>}
+                {q.type === 'matching' && <p className="text-sm text-amber-600 font-semibold mt-2">*Pilih pasangan yang tepat dari dropdown</p>}
+              </div>
+            </div>
+
+            <div className="pl-0 md:pl-14">
+              {/* Render Question Inputs Based on Type */}
+              {q.type === 'pg' && (
+                <div className="space-y-3">
+                  {q.options.map((opt, oIdx) => (
+                    <label key={oIdx} className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${userAnswers[q.id] === opt ? 'border-emerald-500 bg-emerald-50' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'}`}>
+                      <div className="mt-0.5">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${userAnswers[q.id] === opt ? 'border-emerald-500' : 'border-slate-300'}`}>
+                           {userAnswers[q.id] === opt && <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>}
+                        </div>
+                      </div>
+                      <span className="text-slate-700 leading-relaxed">{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {q.type === 'pg_kompleks' && (
+                <div className="space-y-3">
+                  {q.options.map((opt, oIdx) => {
+                    const isChecked = Array.isArray(userAnswers[q.id]) && userAnswers[q.id].includes(opt);
+                    return (
+                      <label key={oIdx} className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${isChecked ? 'border-amber-500 bg-amber-50' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'}`}>
+                        <div className="mt-0.5">
+                           <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isChecked ? 'border-amber-500 bg-amber-500' : 'border-slate-300'}`}>
+                              {isChecked && <IconCheck className="text-white w-4 h-4" />}
+                           </div>
+                        </div>
+                        <span className="text-slate-700 leading-relaxed">{opt}</span>
+                        <input type="checkbox" className="hidden" checked={isChecked} onChange={(e) => {
+                          let curr = Array.isArray(userAnswers[q.id]) ? [...userAnswers[q.id]] : [];
+                          if (e.target.checked) curr.push(opt);
+                          else curr = curr.filter(item => item !== opt);
+                          handleAnswerChange(curr);
+                        }}/>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+
+              {q.type === 'matching' && (
+                <div className="space-y-4">
+                  {q.pairs.map((pair, pIdx) => {
+                    const currentAnsObj = userAnswers[q.id] || {};
+                    return (
+                      <div key={pIdx} className="flex flex-col md:flex-row gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <div className="w-full md:w-1/2 font-medium text-slate-700">{pair.left}</div>
+                        <div className="hidden md:block text-slate-400">➔</div>
+                        <select 
+                          className="w-full md:w-1/2 p-3 rounded-lg border-2 border-slate-200 outline-none focus:border-emerald-500 bg-white"
+                          value={currentAnsObj[pair.left] || ''}
+                          onChange={(e) => {
+                            handleAnswerChange({...currentAnsObj, [pair.left]: e.target.value});
+                          }}
+                        >
+                          <option value="" disabled>Pilih Pasangan...</option>
+                          {q.optionsRight.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {q.type === 'isian' && (
+                <div>
+                  <input 
+                    type="text"
+                    value={userAnswers[q.id] || ''}
+                    onChange={(e) => handleAnswerChange(e.target.value)}
+                    placeholder="Ketik jawaban singkat Anda di sini..."
+                    className="w-full p-4 text-lg border-2 border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 ring-emerald-100 transition"
+                  />
+                </div>
+              )}
+
+            </div>
+          </div>
+          
+          {/* Footer Controls */}
+          <div className="p-4 border-t bg-slate-50 flex justify-between items-center rounded-b-xl">
+             <button 
+               onClick={() => setCurrentIdx(Math.max(0, currentIdx - 1))}
+               disabled={currentIdx === 0}
+               className="px-6 py-2.5 rounded-lg font-semibold text-slate-600 disabled:opacity-50 hover:bg-slate-200 transition"
+             >
+               Kembali
+             </button>
+             
+             {currentIdx < questions.length - 1 ? (
+                <button 
+                  onClick={() => setCurrentIdx(currentIdx + 1)}
+                  className="px-8 py-2.5 rounded-lg font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transition"
+                >
+                  Selanjutnya
+                </button>
+             ) : (
+                <button 
+                  onClick={() => {
+                    if (window.confirm('Yakin ingin menyelesaikan ujian sekarang?')) {
+                      submitQuiz();
+                    }
+                  }}
+                  className="px-8 py-2.5 rounded-lg font-bold bg-amber-500 text-white hover:bg-amber-600 shadow-md transition"
+                >
+                  Kumpulkan Jawaban
+                </button>
+             )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+
+function ResultScreen({ score, currentUser, onLogout }) {
+  const isPass = score >= 80;
+
+  const downloadResult = () => {
+    const content = `
+REKAPITULASI HASIL ASESMEN SUMATIF IPA
+======================================
+Nama Lengkap    : ${currentUser.name}
+Kelas           : ${currentUser.class}
+Nomor Presensi  : ${currentUser.presensi}
+--------------------------------------
+Nilai Akhir     : ${score}
+Status KKM (80) : ${isPass ? 'TUNTAS' : 'REMEDIAL'}
+--------------------------------------
+Dokumen ini dicetak otomatis dari sistem Asesmen MTsN 1 Kota Malang.
+    `;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Hasil_IPA_${currentUser.name}_${currentUser.class}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="bg-white max-w-lg w-full rounded-3xl shadow-2xl overflow-hidden text-center">
+        <div className={`p-10 text-white ${isPass ? 'bg-emerald-500' : 'bg-red-500'}`}>
+          <div className="w-24 h-24 mx-auto bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm mb-4">
+            <span className="text-5xl font-black">{score}</span>
+          </div>
+          <h2 className="text-2xl font-bold mb-1">{isPass ? 'Selamat, Anda Tuntas!' : 'Anda Harus Remedial'}</h2>
+          <p className="opacity-90">KKM Asesmen ini adalah 80</p>
+        </div>
+        
+        <div className="p-8">
+          <div className="space-y-3 mb-8 text-left bg-slate-50 p-4 rounded-xl border border-slate-100 text-slate-700">
+            <div className="flex justify-between border-b border-slate-200 pb-2">
+              <span className="text-slate-500">Nama Siswa</span>
+              <span className="font-semibold">{currentUser.name}</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-200 pb-2">
+              <span className="text-slate-500">Kelas</span>
+              <span className="font-semibold">{currentUser.class}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">No. Presensi</span>
+              <span className="font-semibold">{currentUser.presensi}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+             <button onClick={downloadResult} className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl transition shadow-md">
+               Download Hasil (TXT)
+             </button>
+             <button onClick={onLogout} className="w-full bg-white border-2 border-slate-200 hover:bg-slate-50 text-slate-600 font-bold py-3 rounded-xl transition">
+               Keluar
+             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
